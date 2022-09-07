@@ -47,7 +47,6 @@ impl Output {
         );
 
         let active_client = client.activate_async((), process).unwrap();
-	println!("end of function jack loop");
 
 	sound_test::play_chord(buffer_L_tx, buffer_R_tx);
     }
