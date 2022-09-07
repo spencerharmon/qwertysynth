@@ -8,9 +8,7 @@ impl Output {
     pub fn new() -> Output {
 	Output { }
     }
-    pub fn jack_output() {
-        let (buffer_L_tx, buffer_L_rx) = unbounded();
-        let (buffer_R_tx, buffer_R_rx) = unbounded();
+    pub fn jack_output(buffer_L_rx: Receiver<f32>, buffer_R_rx: Receiver<f32>) {
         let (client, _status) =
             jack::Client::new("qwertysynth", jack::ClientOptions::NO_START_SERVER).unwrap();
         let mut left = client
@@ -47,8 +45,5 @@ impl Output {
         );
 
         let active_client = client.activate_async((), process).unwrap();
-	println!("end of function jack loop");
-
-	sound_test::play_chord(buffer_L_tx, buffer_R_tx);
     }
 }

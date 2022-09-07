@@ -1,7 +1,3 @@
-
-//! Sine wave generator with frequency configuration exposed through standard
-//! input.
-
 use std::{thread, time};
 use crossbeam_channel::*;
 mod equal_temperment;
@@ -14,21 +10,21 @@ mod polysynth;
 
 fn main() {
     
+    let (buffer_L_tx, buffer_L_rx) = unbounded();
+    let (buffer_R_tx, buffer_R_rx) = unbounded();
+//    let out_L = buffer_L_rx.clone();
+//    let out_R = buffer_R_rx.clone();
     let output = output::Output::new();
-    output::Output::jack_output();
-    println!("outside function");
-//    in_L.send(0.1);
-
-//    output::Output::gen_sound(buffer_L_tx, buffer_R_tx);
     
-    wait_async_loop();
+    output::Output::jack_output(buffer_L_rx, buffer_R_rx);
+    let result = buffer_L_tx.send(0.0);
 
-}
-
-pub fn wait_async_loop() {
-    let ten_millis = time::Duration::from_millis(10);
-    let now = time::Instant::now();
-    loop {
-        thread::sleep(ten_millis);
+    //prints "sending on a disconnected channel" unless clones are used, as above.
+    match result {
+	Ok(_) => (),
+	Err(e) => { println!("{}", e) }
+	    
     }
+    sound_test::play_chord(buffer_L_tx, buffer_R_tx);
 }
+
