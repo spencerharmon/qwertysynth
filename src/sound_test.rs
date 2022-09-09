@@ -30,7 +30,7 @@ impl DefaultTestInstrument {
                 wave_table::DEFAULT_AMPLITUDE,
                 wave_table::DEFAULT_PHASE,
             );
-            let mut wt = wtg.generate_wave_table();
+            let mut wt = wtg.generate_wave_table_with_harmonics();
             scale_wave_tables.push(wt);
         }
         let mut instrument = instrument::Instrument::new(scale_wave_tables);
