@@ -66,6 +66,17 @@ impl WaveTable {
     }
 }
 
+impl PartialEq for WaveTable {
+    fn eq(&self, other: &Self) -> bool {
+	self.wavetable == other.wavetable
+    }
+}
+
+//impl Copy for WaveTable {
+//    fn copy(&self) -> WaveTable {
+//	WaveTable { self.wavetable, 0u16 }
+//    }
+//}
 pub struct WaveTableScale {
     tables: Vec<WaveTable>,
 }
@@ -77,3 +88,4 @@ impl WaveTableScale {
 	}
     }
 }
+

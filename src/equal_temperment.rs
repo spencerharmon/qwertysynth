@@ -1,7 +1,7 @@
 use crate::scale;
 
-pub const DEFAULT_BASE_FREQUENCY: f32 = 55.0;
-pub const DEFAULT_SUBDIVISIONS: u8 = 12;
+pub const DEFAULT_BASE_FREQUENCY: f32 = 440.0;
+pub const DEFAULT_SUBDIVISIONS: u8 = 33;
 pub const DEFAULT_OCTAVES: u8 = 6;
 pub const DEFAULT_MULTIPLIER: u8 = 2;
 

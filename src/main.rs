@@ -1,4 +1,4 @@
-use std::{thread, time};
+use tokio;
 use crossbeam_channel::*;
 mod equal_temperment;
 mod wave_table;
@@ -7,8 +7,11 @@ mod instrument;
 mod output;
 mod sound_test;
 mod polysynth;
+mod keyboard;
 
-fn main() {
+#[tokio::main]
+async fn main() {
     let output = output::Output::new();
-    output::Output::jack_output();
+    output::Output::jack_output().await;
+
 }

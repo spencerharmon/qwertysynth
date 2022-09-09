@@ -8,10 +8,10 @@ use crate::polysynth;
 use ndarray::{arr1, Array, Dim};
 
 pub struct DefaultTestInstrument {
-    instrument: instrument::Instrument
+    pub instrument: instrument::Instrument
 }
 impl DefaultTestInstrument {
-    fn new() -> DefaultTestInstrument{
+    pub fn new() -> DefaultTestInstrument{
         let et = equal_temperment::EqualTemperment::new(
             equal_temperment::DEFAULT_BASE_FREQUENCY,
             equal_temperment::DEFAULT_SUBDIVISIONS,

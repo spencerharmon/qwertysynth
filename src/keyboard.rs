@@ -17,7 +17,6 @@ pub fn create_keyboard_listener(on_chan: Sender<u16>, off_chan: Sender<u16>) -> 
 			//note off event
 			let c = key_map_convert(*k);
 			if let Some(x) = c {
-			    println!("{}",x);
                             off_chan.send(x);
 			}
 		    }
@@ -27,7 +26,6 @@ pub fn create_keyboard_listener(on_chan: Sender<u16>, off_chan: Sender<u16>) -> 
 			//note on event
 			let c = key_map_convert(*k);
 			if let Some(x) = c {
-			    println!("{}",x);
                             on_chan.send(x);
 			}
 		    }
