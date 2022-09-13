@@ -1,4 +1,4 @@
-pub const DEFAULT_FREQUENCY:f32 = 440.0;
+pub const DEFAULT_BASE_FREQUENCY:f32 = 440.0;
 pub const DEFAULT_SAMPLE_RATE:u16 = 48000;
 pub const DEFAULT_AMPLITUDE:f32 = 0.8;
 pub const DEFAULT_PHASE:u8 = 0;
@@ -53,7 +53,7 @@ impl WaveTableGenerator {
 	    self.sample_rate
 	);
 	let mut wavetable1 = sine_wave_generator(
-	    &(self.frequency * 1.0/2.0),
+	    &(self.frequency * 0.5),
 	    table_length as usize,
 	    self.sample_rate
 	);
@@ -68,8 +68,26 @@ impl WaveTableGenerator {
 	    self.sample_rate
 	);
 
+	let mut wavetable7 = sine_wave_generator(
+	    &((self.frequency * 3.0/2.0) + 35.0),
+	    table_length as usize,
+	    self.sample_rate
+	);
+
 	let mut wavetable4 = sine_wave_generator(
 	    &(self.frequency * 5.0/8.0),
+	    table_length as usize,
+	    self.sample_rate
+	);
+	
+	let mut wavetable5 = sine_wave_generator(
+	    &(self.frequency + 15_000.0),
+	    table_length as usize,
+	    self.sample_rate
+	);
+	
+	let mut wavetable6 = sine_wave_generator(
+	    &(self.frequency / 8.0),
 	    table_length as usize,
 	    self.sample_rate
 	);
@@ -80,8 +98,11 @@ impl WaveTableGenerator {
 	    wavetable[i as usize] = wavetable0[i as usize] + 
 		wavetable1[i as usize] * 0.6 + 
 		wavetable2[i as usize] * 0.3 +
-		wavetable3[i as usize] * 0.3 +
-		wavetable4[i as usize] * 0.3;
+		wavetable3[i as usize] * 0.5 +
+		wavetable4[i as usize] * 0.3 +
+		wavetable5[i as usize] * 0.5 +
+		wavetable7[i as usize] * 0.5 +
+		wavetable6[i as usize] * 0.8;
 
 		
 	}

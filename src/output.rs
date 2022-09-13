@@ -13,7 +13,7 @@ impl Output {
     pub fn new() -> Output {
         Output { }
     }
-    pub async fn jack_output() {
+    pub async fn jack_output(base_freq: f32) {
         let (buffer_L_tx, buffer_L_rx) = bounded(1000);
         let (buffer_R_tx, buffer_R_rx) = bounded(1000);
 	
@@ -54,13 +54,13 @@ impl Output {
 
         let active_client = client.activate_async((), process).unwrap();
 
-        //key buffers
-        let (key_on_tx, key_on_rx) = bounded(100 as usize);
-        let (key_off_tx, key_off_rx) = bounded(100 as usize);
-        
-        let key_fut = keyboard::create_keyboard_listener(key_on_tx, key_off_tx);
+	//key buffers
+	let (key_on_tx, key_on_rx) = bounded(100 as usize);
+	let (key_off_tx, key_off_rx) = bounded(100 as usize);
+	let key_fut = keyboard::create_keyboard_listener(key_on_tx, key_off_tx);
 
-        let instrument = sound_test::DefaultTestInstrument::new();
-	instrument.instrument.play(key_on_rx, key_off_rx, buffer_L_tx, buffer_R_tx).await;
+
+	let instrument = sound_test::get_instrument_with_base_freq(base_freq);
+	instrument.play(key_on_rx, key_off_rx, buffer_L_tx, buffer_R_tx).await;
     }
 }

@@ -7,13 +7,9 @@ use crate::instrument;
 use crate::polysynth;
 use ndarray::{arr1, Array, Dim};
 
-pub struct DefaultTestInstrument {
-    pub instrument: instrument::Instrument
-}
-impl DefaultTestInstrument {
-    pub fn new() -> DefaultTestInstrument{
+pub fn get_instrument_with_base_freq(freq: f32) -> instrument::Instrument{
         let et = equal_temperment::EqualTemperment::new(
-            equal_temperment::DEFAULT_BASE_FREQUENCY,
+            freq,
             equal_temperment::DEFAULT_SUBDIVISIONS,
             equal_temperment::DEFAULT_OCTAVES,
             equal_temperment::DEFAULT_MULTIPLIER,
@@ -23,17 +19,28 @@ impl DefaultTestInstrument {
     
         let mut scale_wave_tables: Vec<wave_table::WaveTable> = Vec::new();
             
-        for freq in scale.get_frequencies_vector() {
+        for f in scale.get_frequencies_vector() {
             let wtg = wave_table::WaveTableGenerator::new(
-                freq,
+                f,
                 wave_table::DEFAULT_SAMPLE_RATE,
                 wave_table::DEFAULT_AMPLITUDE,
                 wave_table::DEFAULT_PHASE,
             );
-            let mut wt = wtg.generate_wave_table_with_harmonics();
+            let mut wt = wtg.generate_wave_table_sine();
             scale_wave_tables.push(wt);
         }
         let mut instrument = instrument::Instrument::new(scale_wave_tables);
+
+    return instrument;
+}
+pub struct DefaultTestInstrument {
+    pub instrument: instrument::Instrument
+}
+impl DefaultTestInstrument {
+    pub fn new() -> DefaultTestInstrument{
+	let instrument = get_instrument_with_base_freq(
+	    equal_temperment::DEFAULT_BASE_FREQUENCY
+	);
 	DefaultTestInstrument { instrument }
     }
 }

@@ -12,3 +12,4 @@ crossbeam-channel = "0.5.6"
 queues = "1.1.0"
 ndarray = "0.15.6"
 keyboard_query = "0.1.0"
+clap = { version = "3.2.21", features = ["derive"] }
