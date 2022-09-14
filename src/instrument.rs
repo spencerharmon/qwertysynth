@@ -31,7 +31,9 @@ impl Instrument {
                 let mut sample = 0.0;
 
 		for note in &chord {
-		    sample = sample + note.wavetable[index % note.wavetable.len()];
+		    if note.wavetable.len() != 0 {
+			sample = sample + note.wavetable[index % note.wavetable.len()];
+		    }
 		}
         	out_l.send(sample);
         	out_r.send(sample);
