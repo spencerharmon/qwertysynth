@@ -26,10 +26,9 @@ impl EqualTemperment {
     }
     pub fn generate_scale(self) -> scale::Scale {
 	let mut bottom_freq: f32 = self.base_frequency;
-	let mut top_freq: f32 = bottom_freq;
-	top_freq = top_freq * self.multiplier as f32;
+	let mut top_freq: f32 = bottom_freq * self.multiplier as f32;;
 	let mut scale_frequencies:Vec<f32> = Vec::new();
-	for _i in 0..self.octaves{
+	while scale_frequencies.len() <= 40{
 	    let diff = top_freq - bottom_freq;
 	    let interval = diff/self.subdivisions as f32;
 	    scale_frequencies.push(bottom_freq);
