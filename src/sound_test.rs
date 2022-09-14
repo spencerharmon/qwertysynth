@@ -7,10 +7,10 @@ use crate::instrument;
 use crate::polysynth;
 use ndarray::{arr1, Array, Dim};
 
-pub fn get_instrument_with_base_freq(freq: f32) -> instrument::Instrument{
+pub fn get_instrument(freq: f32, subdiv: u8) -> instrument::Instrument{
         let et = equal_temperment::EqualTemperment::new(
             freq,
-            equal_temperment::DEFAULT_SUBDIVISIONS,
+            subdiv,
             equal_temperment::DEFAULT_OCTAVES,
             equal_temperment::DEFAULT_MULTIPLIER,
         );
@@ -38,8 +38,9 @@ pub struct DefaultTestInstrument {
 }
 impl DefaultTestInstrument {
     pub fn new() -> DefaultTestInstrument{
-	let instrument = get_instrument_with_base_freq(
-	    equal_temperment::DEFAULT_BASE_FREQUENCY
+	let instrument = get_instrument(
+	    equal_temperment::DEFAULT_BASE_FREQUENCY,
+	    equal_temperment::DEFAULT_SUBDIVISIONS
 	);
 	DefaultTestInstrument { instrument }
     }
