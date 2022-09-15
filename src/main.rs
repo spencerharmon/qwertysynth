@@ -8,6 +8,7 @@ mod output;
 mod sound_test;
 mod polysynth;
 mod keyboard;
+mod voice;
 
 
 use clap::Parser;
@@ -18,6 +19,8 @@ struct Cli {
     base_freq: f32,
     #[clap(short='s', long="subdivisions", default_value_t=equal_temperment::DEFAULT_SUBDIVISIONS)]
     subdivisions: u8,
+    #[clap(arg_enum, default_value="sine")]
+    voice: voice::VoiceList,
 }
 
 

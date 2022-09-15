@@ -113,7 +113,7 @@ impl WaveTableGenerator {
     }
 								  
 }
-fn sine_wave_generator(freq: &f32, length: usize, sample_rate: u16) -> Vec<f32> {
+pub fn sine_wave_generator(freq: &f32, length: usize, sample_rate: u16) -> Vec<f32> {
 	let mut ret = vec![0f32; length.into()];
     let samples_per_period =  sample_rate / *freq as u16;
     for i in 0..length {
