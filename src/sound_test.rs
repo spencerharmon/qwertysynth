@@ -7,47 +7,10 @@ use crate::instrument;
 use crate::polysynth;
 use ndarray::{arr1, Array, Dim};
 
-pub fn get_instrument(freq: f32, subdiv: u8) -> instrument::Instrument{
-        let et = equal_temperment::EqualTemperment::new(
-            freq,
-            subdiv,
-            equal_temperment::DEFAULT_MULTIPLIER,
-        );
-    
-        let scale = et.generate_scale();
-    
-        let mut scale_wave_tables: Vec<wave_table::WaveTable> = Vec::new();
-            
-        for f in scale.get_frequencies_vector() {
-            let wtg = wave_table::WaveTableGenerator::new(
-                f,
-                wave_table::DEFAULT_SAMPLE_RATE,
-                wave_table::DEFAULT_AMPLITUDE,
-                wave_table::DEFAULT_PHASE,
-            );
-            let mut wt = wtg.generate_wave_table_sine();
-            scale_wave_tables.push(wt);
-        }
-        let mut instrument = instrument::Instrument::new(scale_wave_tables);
-
-    return instrument;
-}
-pub struct DefaultTestInstrument {
-    pub instrument: instrument::Instrument
-}
-impl DefaultTestInstrument {
-    pub fn new() -> DefaultTestInstrument{
-	let instrument = get_instrument(
-	    equal_temperment::DEFAULT_BASE_FREQUENCY,
-	    equal_temperment::DEFAULT_SUBDIVISIONS
-	);
-	DefaultTestInstrument { instrument }
-    }
-}
-pub fn play_scale(out_L: Sender<f32>, out_R: Sender<f32>){
-    let mut instrument = DefaultTestInstrument::new();
+pub fn play_scale(out_L: Sender<f32>, out_R: Sender<f32>,
+		  instrument: &mut instrument::Instrument){
     loop {
-        for t in &mut instrument.instrument.scale_wave_tables {
+        for t in &mut instrument.scale_wave_tables {
 	    for _i in 0..10000 {
 		out_L.send(t.next()).unwrap();
 		out_R.send(t.next()).unwrap();
@@ -56,11 +19,11 @@ pub fn play_scale(out_L: Sender<f32>, out_R: Sender<f32>){
     } 
 }
 
-pub fn play_chord(out_L: Sender<f32>, out_R: Sender<f32>){
-    let instrument = DefaultTestInstrument::new();
-    let note1 = &instrument.instrument.scale_wave_tables[22];
-    let note2 = &instrument.instrument.scale_wave_tables[26];
-    let note3 = &instrument.instrument.scale_wave_tables[29];
+pub fn play_chord(out_L: Sender<f32>, out_R: Sender<f32>,
+		  instrument: &mut instrument::Instrument){
+    let note1 = &instrument.scale_wave_tables[22];
+    let note2 = &instrument.scale_wave_tables[26];
+    let note3 = &instrument.scale_wave_tables[29];
     let chord = vec![note1, note2, note3];
 //    let mut out = arr1(&[ ]);
 
