@@ -1,9 +1,9 @@
 use crate::wave_table:: { WaveTable, sine_wave_generator };
+use crate::voice::Voice;
 
 pub struct Sine {
     wavetable: WaveTable
 }
-
 
 fn generate_wave_table(frequency: f32,
 		       sample_rate: u16,
@@ -37,5 +37,11 @@ impl Sine {
 			    amplitude,
 			    phase);
 	Sine{ wavetable: wt }
+    }
+}
+
+impl Voice for Sine {
+    fn get_wavetable(self) -> WaveTable {
+	self.wavetable
     }
 }

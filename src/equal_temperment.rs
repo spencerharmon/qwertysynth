@@ -2,25 +2,22 @@ use crate::scale;
 
 pub const DEFAULT_BASE_FREQUENCY: f32 = 440.0;
 pub const DEFAULT_SUBDIVISIONS: u8 = 33;
-pub const DEFAULT_OCTAVES: u8 = 6;
+// 2 for octaves. 3 for tritaves. Other for n-taves if you want.
 pub const DEFAULT_MULTIPLIER: u8 = 2;
 
 pub struct EqualTemperment {
     base_frequency: f32,
     subdivisions: u8,
-    octaves: u8,
     multiplier: u8,
 }
 
 impl EqualTemperment {
     pub fn new(base_frequency: f32,
 	   subdivisions: u8,
-	   octaves: u8,
 	   multiplier: u8) -> EqualTemperment {
 	EqualTemperment {
 	    base_frequency: base_frequency,
 	    subdivisions: subdivisions,
-	    octaves: octaves,
 	    multiplier: multiplier
 	}
     }

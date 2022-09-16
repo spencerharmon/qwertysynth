@@ -11,7 +11,6 @@ pub fn get_instrument(freq: f32, subdiv: u8) -> instrument::Instrument{
         let et = equal_temperment::EqualTemperment::new(
             freq,
             subdiv,
-            equal_temperment::DEFAULT_OCTAVES,
             equal_temperment::DEFAULT_MULTIPLIER,
         );
     
