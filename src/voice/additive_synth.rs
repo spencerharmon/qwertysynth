@@ -24,13 +24,14 @@ fn generate_wave_table(
     frequency: f32,
     sample_rate: u16,
     amplitude: f32,
-    _phase: u8,
+    phase: u8,
     partial_amplitudes: &[f32; NUM_PARTIALS],
 ) -> WaveTable {
     // Match Sine's (buggy) length formula so additive and sine tune identically.
     // Pre-3 will address the truncation/aliasing fix in wave_table.rs for both.
     let table_length = (sample_rate / frequency as u16 * 2) as usize;
     let samples_per_period = (sample_rate / frequency as u16) as f32;
+    let phi = phase as f32 / 256.0 * 2.0 * std::f32::consts::PI;
 
     let nyquist = sample_rate as f32 / 2.0;
 
@@ -46,8 +47,8 @@ fn generate_wave_table(
             continue;
         }
         for i in 0..table_length {
-            samples[i] +=
-                a * (2.0 * std::f32::consts::PI * n * i as f32 / samples_per_period).sin();
+            samples[i] += a
+                * (2.0 * std::f32::consts::PI * n * i as f32 / samples_per_period + phi).sin();
         }
     }
 
