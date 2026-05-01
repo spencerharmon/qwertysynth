@@ -6,6 +6,7 @@ use crate::wave_table::WaveTable;
 
 mod keyboard_widget;
 mod voice_panel;
+mod tuning_panel;
 
 pub struct App {
     swap_tx: Sender<Vec<WaveTable>>,
@@ -49,6 +50,12 @@ impl eframe::App for App {
 		needs_rebuild = true;
 	    }
 	    if voice_panel::show_config_window(ui.ctx(), &mut s) {
+		needs_rebuild = true;
+	    }
+	    if tuning_panel::show_top_bar(ui, &mut s) {
+		needs_rebuild = true;
+	    }
+	    if tuning_panel::show_config_window(ui.ctx(), &mut s) {
 		needs_rebuild = true;
 	    }
 	    ui.separator();
