@@ -69,6 +69,8 @@ fn main() {
     rt.spawn(async move {
 	output::Output::jack_output(args.base_freq, args.subdivisions, instrument, swap_rx).await;
     });
+    // TODO: real JACK liveness signal would require an output.rs edit.
+    state.lock().unwrap().jack_active = true;
 
     let (gui_on_tx, gui_on_rx) = unbounded::<u16>();
     let (gui_off_tx, gui_off_rx) = unbounded::<u16>();

@@ -7,6 +7,7 @@ use crate::wave_table::WaveTable;
 mod keyboard_widget;
 mod voice_panel;
 mod tuning_panel;
+mod jack_indicator;
 
 pub struct App {
     swap_tx: Sender<Vec<WaveTable>>,
@@ -46,6 +47,10 @@ impl eframe::App for App {
 	let mut needs_rebuild = false;
 	{
 	    let mut s = self.state.lock().unwrap();
+	    ui.horizontal(|ui| {
+		jack_indicator::show(ui, &s);
+		ui.label("jack");
+	    });
 	    if voice_panel::show_top_bar(ui, &mut s) {
 		needs_rebuild = true;
 	    }
