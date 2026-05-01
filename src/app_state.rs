@@ -2,6 +2,19 @@ use std::collections::HashSet;
 use std::sync::{Arc, Mutex};
 
 use crate::voice::VoiceList;
+use crate::wave_table::{DEFAULT_AMPLITUDE, DEFAULT_PHASE};
+
+#[derive(Clone, Copy, Debug)]
+pub struct VoiceParams {
+    pub amplitude: f32,
+    pub phase: u8,
+}
+
+impl Default for VoiceParams {
+    fn default() -> Self {
+	Self { amplitude: DEFAULT_AMPLITUDE, phase: DEFAULT_PHASE }
+    }
+}
 
 #[derive(Clone, Copy, Debug)]
 pub struct EtParams {
@@ -27,9 +40,12 @@ pub struct AppState {
     pub pressed: HashSet<u16>,
     pub jack_active: bool,
     pub current_voice: VoiceList,
+    pub voice_params: VoiceParams,
     pub current_tuning: TuningSystemList,
     pub last_key: Option<(char, f32)>,
     pub scale_freqs: Vec<f32>,
+    pub show_voice_config: bool,
+    pub show_tuning_config: bool,
 }
 
 impl AppState {
@@ -42,9 +58,12 @@ impl AppState {
 	    pressed: HashSet::new(),
 	    jack_active: false,
 	    current_voice: voice,
+	    voice_params: VoiceParams::default(),
 	    current_tuning: tuning,
 	    last_key: None,
 	    scale_freqs,
+	    show_voice_config: false,
+	    show_tuning_config: false,
 	}
     }
 }
