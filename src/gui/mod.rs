@@ -8,6 +8,7 @@ mod keyboard_widget;
 mod voice_panel;
 mod tuning_panel;
 mod jack_indicator;
+mod info_bar;
 
 pub struct App {
     swap_tx: Sender<Vec<WaveTable>>,
@@ -45,32 +46,39 @@ impl eframe::App for App {
     fn ui(&mut self, ui: &mut egui::Ui, _frame: &mut eframe::Frame) {
 	self.drain_key_events();
 	let mut needs_rebuild = false;
+	let ctx = ui.ctx().clone();
+
 	{
-	    let mut s = self.state.lock().unwrap();
-	    ui.horizontal(|ui| {
-		jack_indicator::show(ui, &s);
-		ui.label("jack");
+	    let s = self.state.lock().unwrap();
+	    egui::TopBottomPanel::bottom("info_bar").show(&ctx, |ui| {
+		info_bar::show(ui, &s);
 	    });
-	    if voice_panel::show_top_bar(ui, &mut s) {
-		needs_rebuild = true;
-	    }
-	    if voice_panel::show_config_window(ui.ctx(), &mut s) {
-		needs_rebuild = true;
-	    }
-	    if tuning_panel::show_top_bar(ui, &mut s) {
-		needs_rebuild = true;
-	    }
-	    if tuning_panel::show_config_window(ui.ctx(), &mut s) {
-		needs_rebuild = true;
-	    }
-	    ui.separator();
-	    keyboard_widget::show(ui, &s);
-	    if needs_rebuild {
-		let new_tables = voice_panel::rebuild_wavetables(&s);
-		let _ = self.swap_tx.send(new_tables);
-	    }
 	}
-	ui.ctx().request_repaint();
+
+	let mut s = self.state.lock().unwrap();
+	ui.horizontal(|ui| {
+	    jack_indicator::show(ui, &s);
+	    ui.label("jack");
+	});
+	if voice_panel::show_top_bar(ui, &mut s) {
+	    needs_rebuild = true;
+	}
+	if voice_panel::show_config_window(ui.ctx(), &mut s) {
+	    needs_rebuild = true;
+	}
+	if tuning_panel::show_top_bar(ui, &mut s) {
+	    needs_rebuild = true;
+	}
+	if tuning_panel::show_config_window(ui.ctx(), &mut s) {
+	    needs_rebuild = true;
+	}
+	ui.separator();
+	keyboard_widget::show(ui, &s);
+	if needs_rebuild {
+	    let new_tables = voice_panel::rebuild_wavetables(&s);
+	    let _ = self.swap_tx.send(new_tables);
+	}
+	ctx.request_repaint();
     }
 }
 
