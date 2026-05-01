@@ -13,7 +13,7 @@ impl Output {
     pub fn new() -> Output {
         Output { }
     }
-    pub async fn jack_output(base_freq: f32, subdivisions: u8, instrument: Instrument) {
+    pub async fn jack_output(base_freq: f32, subdivisions: u8, instrument: Instrument, swap_in: Receiver<Vec<WaveTable>>) {
         let (buffer_L_tx, buffer_L_rx) = bounded(1000);
         let (buffer_R_tx, buffer_R_rx) = bounded(1000);
 	
@@ -60,6 +60,6 @@ impl Output {
 	let key_fut = keyboard::create_keyboard_listener(key_on_tx, key_off_tx);
 
 
-	instrument.play(key_on_rx, key_off_rx, buffer_L_tx, buffer_R_tx).await;
+	instrument.play(key_on_rx, key_off_rx, swap_in, buffer_L_tx, buffer_R_tx).await;
     }
 }

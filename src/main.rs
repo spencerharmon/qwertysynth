@@ -54,6 +54,7 @@ async fn main() {
 	scale_wave_tables.push(wt);
     }
     let mut instrument = instrument::Instrument::new(scale_wave_tables);
-    
-    output::Output::jack_output(args.base_freq, args.subdivisions, instrument).await;
+
+    let (_swap_tx, swap_rx) = unbounded::<Vec<wave_table::WaveTable>>();
+    output::Output::jack_output(args.base_freq, args.subdivisions, instrument, swap_rx).await;
 }
