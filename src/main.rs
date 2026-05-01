@@ -9,6 +9,7 @@ mod sound_test;
 mod polysynth;
 mod keyboard;
 mod voice;
+mod gui;
 
 
 use crate::voice::Voice;
@@ -25,11 +26,8 @@ struct Cli {
 }
 
 
-#[tokio::main]
-async fn main() {
+fn main() {
     let args = Cli::parse();
-    let output = output::Output::new();
-
 
     let et = equal_temperment::EqualTemperment::new(
         args.base_freq,
@@ -38,10 +36,8 @@ async fn main() {
     );
 
     let scale = et.generate_scale();
-    
 
     let mut scale_wave_tables: Vec<wave_table::WaveTable> = Vec::new();
-            
 
     for f in scale.get_frequencies_vector() {
 	let wt = args.voice.get_wavetable(
@@ -53,8 +49,14 @@ async fn main() {
 
 	scale_wave_tables.push(wt);
     }
-    let mut instrument = instrument::Instrument::new(scale_wave_tables);
+    let instrument = instrument::Instrument::new(scale_wave_tables);
 
-    let (_swap_tx, swap_rx) = unbounded::<Vec<wave_table::WaveTable>>();
-    output::Output::jack_output(args.base_freq, args.subdivisions, instrument, swap_rx).await;
+    let (swap_tx, swap_rx) = unbounded::<Vec<wave_table::WaveTable>>();
+
+    let rt = tokio::runtime::Runtime::new().expect("failed to build tokio runtime");
+    rt.spawn(async move {
+	output::Output::jack_output(args.base_freq, args.subdivisions, instrument, swap_rx).await;
+    });
+
+    gui::run(swap_tx).expect("gui exited with error");
 }
