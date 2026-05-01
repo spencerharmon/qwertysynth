@@ -4,6 +4,8 @@ use eframe::egui;
 use crate::app_state::{KEY_GLYPHS, SharedState};
 use crate::wave_table::WaveTable;
 
+mod keyboard_widget;
+
 pub struct App {
     _swap_tx: Sender<Vec<WaveTable>>,
     state: SharedState,
@@ -39,6 +41,8 @@ impl App {
 impl eframe::App for App {
     fn ui(&mut self, ui: &mut egui::Ui, _frame: &mut eframe::Frame) {
 	self.drain_key_events();
+	let s = self.state.lock().unwrap();
+	keyboard_widget::show(ui, &s);
 	ui.ctx().request_repaint();
     }
 }
