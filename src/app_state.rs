@@ -50,3 +50,12 @@ impl AppState {
 }
 
 pub type SharedState = Arc<Mutex<AppState>>;
+
+/// Maps scale index (0..40) to the physical QWERTY glyph it lives on.
+/// Derived from src/keyboard.rs key_map_convert.
+pub const KEY_GLYPHS: [char; 40] = [
+    '`','a','q','1','z','s','w','2','x','d',
+    'e','3','c','f','r','4','v','g','t','5',
+    'b','h','y','6','n','j','u','7','m','k',
+    'i','8',',','l','o','9','.',';','p','0',
+];

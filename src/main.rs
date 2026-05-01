@@ -70,5 +70,11 @@ fn main() {
 	output::Output::jack_output(args.base_freq, args.subdivisions, instrument, swap_rx).await;
     });
 
-    gui::run(swap_tx, state).expect("gui exited with error");
+    let (gui_on_tx, gui_on_rx) = unbounded::<u16>();
+    let (gui_off_tx, gui_off_rx) = unbounded::<u16>();
+    rt.spawn(async move {
+	keyboard::create_keyboard_listener(gui_on_tx, gui_off_tx).await.ok();
+    });
+
+    gui::run(swap_tx, state, gui_on_rx, gui_off_rx).expect("gui exited with error");
 }
