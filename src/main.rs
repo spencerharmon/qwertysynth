@@ -28,6 +28,13 @@ struct Cli {
 
 
 fn main() {
+    // keyboard_query reads via X11 XQueryKeymap. On Wayland sessions,
+    // a Wayland-native eframe window doesn't share key state with
+    // XWayland, so unset WAYLAND_DISPLAY to force eframe/winit to use
+    // X11 (XWayland) — same display the keyboard listener reads.
+    std::env::remove_var("WAYLAND_DISPLAY");
+    std::env::set_var("WINIT_UNIX_BACKEND", "x11");
+
     let args = Cli::parse();
 
     let et = equal_temperment::EqualTemperment::new(
