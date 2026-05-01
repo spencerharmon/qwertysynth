@@ -10,6 +10,7 @@ mod polysynth;
 mod keyboard;
 mod voice;
 mod gui;
+mod app_state;
 
 
 use crate::voice::Voice;
@@ -36,12 +37,13 @@ fn main() {
     );
 
     let scale = et.generate_scale();
+    let scale_freqs = scale.get_frequencies_vector();
 
     let mut scale_wave_tables: Vec<wave_table::WaveTable> = Vec::new();
 
-    for f in scale.get_frequencies_vector() {
+    for f in &scale_freqs {
 	let wt = args.voice.get_wavetable(
-	    f,
+	    *f,
 	    wave_table::DEFAULT_SAMPLE_RATE,
 	    wave_table::DEFAULT_AMPLITUDE,
 	    wave_table::DEFAULT_PHASE
@@ -53,10 +55,20 @@ fn main() {
 
     let (swap_tx, swap_rx) = unbounded::<Vec<wave_table::WaveTable>>();
 
+    let state = std::sync::Arc::new(std::sync::Mutex::new(app_state::AppState::new(
+	args.voice.clone(),
+	app_state::TuningSystemList::EqualTemperment(app_state::EtParams {
+	    base_freq: args.base_freq,
+	    subdivisions: args.subdivisions,
+	    multiplier: equal_temperment::DEFAULT_MULTIPLIER,
+	}),
+	scale_freqs,
+    )));
+
     let rt = tokio::runtime::Runtime::new().expect("failed to build tokio runtime");
     rt.spawn(async move {
 	output::Output::jack_output(args.base_freq, args.subdivisions, instrument, swap_rx).await;
     });
 
-    gui::run(swap_tx).expect("gui exited with error");
+    gui::run(swap_tx, state).expect("gui exited with error");
 }
