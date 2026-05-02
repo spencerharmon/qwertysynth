@@ -5,8 +5,6 @@ mod wave_table;
 mod scale;
 mod instrument;
 mod output;
-mod sound_test;
-mod polysynth;
 mod keyboard;
 mod voice;
 mod gui;

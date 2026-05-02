@@ -3,7 +3,6 @@ use tokio::task;
 use tokio::time::{sleep, Duration};
 use crossbeam_channel::*;
 
-use crate::sound_test;
 use crate::keyboard;
 use crate::wave_table::WaveTable;
 use crate::instrument::Instrument;
