@@ -9,6 +9,7 @@ mod keyboard;
 mod voice;
 mod gui;
 mod app_state;
+mod envelope;
 
 
 use crate::voice::Voice;
@@ -22,6 +23,14 @@ struct Cli {
     subdivisions: u8,
     #[clap(arg_enum, long="voice", default_value="sine")]
     voice: voice::VoiceList,
+    #[clap(long="attack", default_value_t=envelope::EnvelopeParams::DEFAULT_ATTACK_S)]
+    attack: f32,
+    #[clap(long="decay", default_value_t=envelope::EnvelopeParams::DEFAULT_DECAY_S)]
+    decay: f32,
+    #[clap(long="sustain", default_value_t=envelope::EnvelopeParams::DEFAULT_SUSTAIN)]
+    sustain: f32,
+    #[clap(long="release", default_value_t=envelope::EnvelopeParams::DEFAULT_RELEASE_S)]
+    release: f32,
 }
 
 
@@ -49,9 +58,19 @@ fn main() {
 
 	scale_wave_tables.push(wt);
     }
-    let instrument = instrument::Instrument::new(scale_wave_tables);
+    let instrument = instrument::Instrument::new(
+	scale_wave_tables,
+	envelope::EnvelopeParams {
+	    attack_s: args.attack,
+	    decay_s: args.decay,
+	    sustain: args.sustain,
+	    release_s: args.release,
+	},
+	wave_table::DEFAULT_SAMPLE_RATE,
+    );
 
     let (swap_tx, swap_rx) = unbounded::<Vec<wave_table::WaveTable>>();
+    let (env_tx, env_rx) = unbounded::<envelope::EnvelopeParams>();
 
     let state = std::sync::Arc::new(std::sync::Mutex::new(app_state::AppState::new(
 	args.voice.clone(),
@@ -60,12 +79,18 @@ fn main() {
 	    subdivisions: args.subdivisions,
 	    multiplier: equal_temperment::DEFAULT_MULTIPLIER,
 	}),
+	envelope::EnvelopeParams {
+	    attack_s: args.attack,
+	    decay_s: args.decay,
+	    sustain: args.sustain,
+	    release_s: args.release,
+	},
 	scale_freqs,
     )));
 
     let rt = tokio::runtime::Runtime::new().expect("failed to build tokio runtime");
     rt.spawn(async move {
-	output::Output::jack_output(args.base_freq, args.subdivisions, instrument, swap_rx).await;
+	output::Output::jack_output(args.base_freq, args.subdivisions, instrument, swap_rx, env_rx).await;
     });
     // TODO: real JACK liveness signal would require an output.rs edit.
     state.lock().unwrap().jack_active = true;
@@ -76,5 +101,5 @@ fn main() {
 	keyboard::create_keyboard_listener(gui_on_tx, gui_off_tx).await.ok();
     });
 
-    gui::run(swap_tx, state, gui_on_rx, gui_off_rx).expect("gui exited with error");
+    gui::run(swap_tx, env_tx, state, gui_on_rx, gui_off_rx).expect("gui exited with error");
 }
