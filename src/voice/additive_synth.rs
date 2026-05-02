@@ -1,4 +1,4 @@
-use crate::wave_table::WaveTable;
+use crate::wave_table::{WaveTable, PERIOD_SAMPLES};
 use crate::voice::Voice;
 
 // Number of harmonic partials. Ratios are 1..=NUM_PARTIALS.
@@ -16,10 +16,6 @@ pub const DEFAULT_AMPLITUDES: [f32; NUM_PARTIALS] = [
     1.0 / 8.0,
 ];
 
-pub struct AdditiveSynth {
-    wavetable: WaveTable,
-}
-
 fn generate_wave_table(
     frequency: f32,
     sample_rate: u16,
@@ -27,28 +23,27 @@ fn generate_wave_table(
     phase: u8,
     partial_amplitudes: &[f32; NUM_PARTIALS],
 ) -> WaveTable {
-    // Match Sine's (buggy) length formula so additive and sine tune identically.
-    // Pre-3 will address the truncation/aliasing fix in wave_table.rs for both.
-    let table_length = (sample_rate / frequency as u16 * 2) as usize;
-    let samples_per_period = (sample_rate / frequency as u16) as f32;
+    // Each partial completes exactly `n` cycles inside one canonical
+    // period, so partial content is independent of `frequency`. The
+    // Nyquist check still uses `frequency` because playback rate is
+    // what determines which partials would alias.
+    let len = PERIOD_SAMPLES;
     let phi = phase as f32 / 256.0 * 2.0 * std::f32::consts::PI;
-
     let nyquist = sample_rate as f32 / 2.0;
 
-    let mut samples = vec![0f32; table_length];
+    let mut samples = vec![0f32; len];
     for (n_minus_one, a) in partial_amplitudes.iter().enumerate() {
         let n = (n_minus_one + 1) as f32;
         let partial_freq = n * frequency;
         if partial_freq >= nyquist {
-            // Skip aliasing partials.
             continue;
         }
         if *a == 0.0 {
             continue;
         }
-        for i in 0..table_length {
+        for i in 0..len {
             samples[i] += a
-                * (2.0 * std::f32::consts::PI * n * i as f32 / samples_per_period + phi).sin();
+                * (2.0 * std::f32::consts::PI * n * i as f32 / len as f32 + phi).sin();
         }
     }
 
@@ -61,7 +56,11 @@ fn generate_wave_table(
         }
     }
 
-    WaveTable::new(samples, 0)
+    WaveTable::new(samples, frequency, sample_rate)
+}
+
+pub struct AdditiveSynth {
+    wavetable: WaveTable,
 }
 
 impl AdditiveSynth {

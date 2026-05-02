@@ -3,38 +3,53 @@ pub const DEFAULT_SAMPLE_RATE:u16 = 48000;
 pub const DEFAULT_AMPLITUDE:f32 = 0.8;
 pub const DEFAULT_PHASE:u8 = 0;
 
-pub fn sine_wave_generator(freq: &f32, length: usize, sample_rate: u16) -> Vec<f32> {
-    let mut ret = vec![0f32; length.into()];
-    let samples_per_period =  sample_rate / *freq as u16;
-    for i in 0..length {
-        ret[i as usize] = (2f32 * std::f32::consts::PI * i as f32 / samples_per_period as f32).sin();
-
-    }
-	ret
-}
-
+/// Length of one canonical period in samples. Voices generate exactly
+/// one period of this length and the playback loop steps through it
+/// at a fractional rate determined by note frequency, so pitch is no
+/// longer baked into the table size. 2048 is a power of two with
+/// sub-cent linear-interpolation error across the audible range.
+pub const PERIOD_SAMPLES: usize = 2048;
 
 #[derive(Clone)]
 pub struct WaveTable {
     pub wavetable: Vec<f32>,
-    index: u16
+    phase: f32,
+    step: f32,
 }
 
 impl WaveTable {
-    pub fn new(wavetable: Vec<f32>,
-	       index: u16) -> WaveTable {
+    pub fn new(wavetable: Vec<f32>, frequency: f32, sample_rate: u16) -> WaveTable {
+	let len = wavetable.len() as f32;
+	let step = if len > 0.0 {
+	    frequency * len / sample_rate as f32
+	} else {
+	    0.0
+	};
 	WaveTable {
-	    wavetable: wavetable,
-	    index: index
+	    wavetable,
+	    phase: 0.0,
+	    step,
 	}
     }
+
     pub fn next(&mut self) -> f32 {
-	if self.index == self.wavetable.capacity() as u16 {
-	    self.index = 0;
+	let len = self.wavetable.len();
+	if len == 0 {
+	    return 0.0;
 	}
-	let ret = self.wavetable[self.index as usize];
-	self.index = self.index + 1u16;
-	return ret;
+	let i0 = self.phase as usize % len;
+	let i1 = (i0 + 1) % len;
+	let frac = self.phase - self.phase.floor();
+	let s0 = self.wavetable[i0];
+	let s1 = self.wavetable[i1];
+	let sample = s0 + (s1 - s0) * frac;
+
+	self.phase += self.step;
+	let len_f = len as f32;
+	while self.phase >= len_f {
+	    self.phase -= len_f;
+	}
+	sample
     }
 }
 
@@ -43,21 +58,3 @@ impl PartialEq for WaveTable {
 	self.wavetable == other.wavetable
     }
 }
-
-//impl Copy for WaveTable {
-//    fn copy(&self) -> WaveTable {
-//	WaveTable { self.wavetable, 0u16 }
-//    }
-//}
-pub struct WaveTableScale {
-    tables: Vec<WaveTable>,
-}
-
-impl WaveTableScale {
-    fn new (tables: Vec<WaveTable>) -> WaveTableScale {
-	WaveTableScale {
-	    tables: tables
-	}
-    }
-}
-

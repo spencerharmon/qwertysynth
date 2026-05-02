@@ -20,29 +20,31 @@ impl Instrument {
     ) -> task::JoinHandle<()> {
 
 	let fut = task::spawn(async move {
-            let mut chord: Vec<WaveTable> = Vec::new();
-            let mut index = 0;
+            // Track each active voice by its scale index. With pitch
+            // now living in WaveTable's step rather than its sample
+            // buffer, two notes of the same voice have identical
+            // buffers and can't be told apart by content; the index
+            // is what distinguishes them on key-off.
+            let mut chord: Vec<(u16, WaveTable)> = Vec::new();
             loop {
                 if let Ok(new_tables) = swap_in.try_recv() {
                     self.scale_wave_tables = new_tables;
                     chord.clear();
                 }
                 if let Ok(val) = key_off.try_recv() {
-		    chord.retain(|x| x != &self.scale_wave_tables[val as usize]);
+		    if let Some(pos) = chord.iter().position(|(idx, _)| *idx == val) {
+			chord.remove(pos);
+		    }
 		}
 		if let Ok(val) = key_on.try_recv() {
-		    chord.push(self.scale_wave_tables[val as usize].clone());
+		    chord.push((val, self.scale_wave_tables[val as usize].clone()));
 		}
                 let mut sample = 0.0;
-
-		for note in &chord {
-		    if note.wavetable.len() != 0 {
-			sample = sample + note.wavetable[index % note.wavetable.len()];
-		    }
+		for (_, note) in chord.iter_mut() {
+		    sample += note.next();
 		}
         	out_l.send(sample);
         	out_r.send(sample);
-        	index = index + 1;
 	    }
 	    
 	});
