@@ -10,6 +10,6 @@ tokio = { version = "1.52", features = [ "full" ] }
 jack = "0.13"
 crossbeam-channel = "0.5"
 ndarray = "0.15.6"
-keyboard_query = "0.1.0"
 clap = { version = "3.2.21", features = ["derive"] }
 eframe = "0.34.1"
+evdev = { version = "0.13.2", features = ["tokio"] }
