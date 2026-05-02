@@ -1,8 +1,8 @@
 pub mod sine;
-pub mod test_additive_synth;
+pub mod additive_synth;
 
 use crate::voice::sine::Sine;
-use crate::voice::test_additive_synth::TestAdditiveSynth;
+use crate::voice::additive_synth::AdditiveSynth;
 use crate::wave_table::WaveTable;
 
 use std::str::FromStr;
@@ -16,7 +16,7 @@ pub trait Voice {
 #[derive(Clone, ArgEnum)]
 pub enum VoiceList {
     Sine,
-    TestAdditiveSynth,
+    AdditiveSynth,
 }
 
 impl FromStr for VoiceList {
@@ -24,7 +24,7 @@ impl FromStr for VoiceList {
     fn from_str(s: &str) -> Result<Self, io::Error> {
 	match s.to_ascii_lowercase().as_str() {
 	    "sine" => Ok(VoiceList::Sine),
-	    "test-additive-synth" => Ok(VoiceList::TestAdditiveSynth),
+	    "additive-synth" => Ok(VoiceList::AdditiveSynth),
 	    _ => return Err(std::io::Error::new(io::ErrorKind::Other, "invalid voice")),
 	}
     }
@@ -41,8 +41,8 @@ impl VoiceList {
             Self::Sine =>
 		Sine::new(frequency, sample_rate, amplitude, phase)
 		.get_wavetable(),
-            Self::TestAdditiveSynth =>
-		TestAdditiveSynth::new(frequency, sample_rate, amplitude, phase)
+            Self::AdditiveSynth =>
+		AdditiveSynth::new(frequency, sample_rate, amplitude, phase)
 		.get_wavetable(),
         }
     }
