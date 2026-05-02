@@ -2,16 +2,19 @@ use crossbeam_channel::{Receiver, Sender};
 use eframe::egui;
 
 use crate::app_state::{KEY_GLYPHS, SharedState};
+use crate::envelope::EnvelopeParams;
 use crate::wave_table::WaveTable;
 
 mod keyboard_widget;
 mod voice_panel;
 mod tuning_panel;
+mod envelope_panel;
 mod jack_indicator;
 mod info_bar;
 
 pub struct App {
     swap_tx: Sender<Vec<WaveTable>>,
+    env_tx: Sender<EnvelopeParams>,
     state: SharedState,
     key_on_rx: Receiver<u16>,
     key_off_rx: Receiver<u16>,
@@ -20,11 +23,12 @@ pub struct App {
 impl App {
     pub fn new(
 	swap_tx: Sender<Vec<WaveTable>>,
+	env_tx: Sender<EnvelopeParams>,
 	state: SharedState,
 	key_on_rx: Receiver<u16>,
 	key_off_rx: Receiver<u16>,
     ) -> Self {
-	Self { swap_tx, state, key_on_rx, key_off_rx }
+	Self { swap_tx, env_tx, state, key_on_rx, key_off_rx }
     }
 
     fn drain_key_events(&self) {
@@ -72,6 +76,9 @@ impl eframe::App for App {
 	if tuning_panel::show_config_window(ui.ctx(), &mut s) {
 	    needs_rebuild = true;
 	}
+	if let Some(new_env) = envelope_panel::show_top_bar(ui, &mut s) {
+	    let _ = self.env_tx.send(new_env);
+	}
 	ui.separator();
 	keyboard_widget::show(ui, &s);
 	if needs_rebuild {
@@ -84,6 +91,7 @@ impl eframe::App for App {
 
 pub fn run(
     swap_tx: Sender<Vec<WaveTable>>,
+    env_tx: Sender<EnvelopeParams>,
     state: SharedState,
     key_on_rx: Receiver<u16>,
     key_off_rx: Receiver<u16>,
@@ -99,7 +107,7 @@ pub fn run(
 	options,
 	Box::new(|cc| {
 	    cc.egui_ctx.set_visuals(egui::Visuals::dark());
-	    Ok(Box::new(App::new(swap_tx, state, key_on_rx, key_off_rx)))
+	    Ok(Box::new(App::new(swap_tx, env_tx, state, key_on_rx, key_off_rx)))
 	}),
     )
 }
