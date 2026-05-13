@@ -2,6 +2,7 @@ use eframe::egui;
 
 use crate::app_state::{AppState, VoiceParams};
 use crate::voice::VoiceList;
+use crate::voice::additive_synth::{DEFAULT_AMPLITUDES, NUM_PARTIALS};
 use crate::wave_table::{WaveTable, DEFAULT_SAMPLE_RATE};
 
 /// Returns true if the wavetable set should be rebuilt and pushed.
@@ -37,8 +38,9 @@ pub fn show_config_window(ctx: &egui::Context, state: &mut AppState) -> bool {
     let mut changed = false;
     let mut open = state.show_voice_config;
     let title = format!("{} config", voice_name(&state.current_voice));
+    let voice = state.current_voice.clone();
     egui::Window::new(title)
-	.id(egui::Id::new(voice_window_id(&state.current_voice)))
+	.id(egui::Id::new(voice_window_id(&voice)))
 	.open(&mut open)
 	.show(ctx, |ui| {
 	    let p: &mut VoiceParams = &mut state.voice_params;
@@ -47,8 +49,51 @@ pub fn show_config_window(ctx: &egui::Context, state: &mut AppState) -> bool {
 	    if r1.changed() || r2.changed() {
 		changed = true;
 	    }
+	    if matches!(voice, VoiceList::AdditiveSynth) {
+		ui.separator();
+		changed |= show_partials(ui, p);
+	    }
 	});
     state.show_voice_config = open;
+    changed
+}
+
+fn show_partials(ui: &mut egui::Ui, p: &mut VoiceParams) -> bool {
+    let mut changed = false;
+    ui.horizontal(|ui| {
+	ui.label("partials");
+	if ui.button("reset").clicked() {
+	    p.partial_amplitudes = DEFAULT_AMPLITUDES;
+	    p.partial_phases = [0.0; NUM_PARTIALS];
+	    changed = true;
+	}
+    });
+    egui::Grid::new("partials_grid")
+	.num_columns(3)
+	.spacing([8.0, 4.0])
+	.striped(true)
+	.show(ui, |ui| {
+	    ui.label("n");
+	    ui.label("amplitude");
+	    ui.label("phase (rad)");
+	    ui.end_row();
+	    let two_pi = 2.0 * std::f32::consts::PI;
+	    for n in 0..NUM_PARTIALS {
+		ui.label(format!("{}", n + 1));
+		let r_a = ui.add(
+		    egui::Slider::new(&mut p.partial_amplitudes[n], 0.0..=1.0)
+			.show_value(true),
+		);
+		let r_p = ui.add(
+		    egui::Slider::new(&mut p.partial_phases[n], 0.0..=two_pi)
+			.show_value(true),
+		);
+		if r_a.changed() || r_p.changed() {
+		    changed = true;
+		}
+		ui.end_row();
+	    }
+	});
     changed
 }
 
@@ -57,11 +102,10 @@ pub fn rebuild_wavetables(state: &AppState) -> Vec<WaveTable> {
 	.scale_freqs
 	.iter()
 	.map(|f| {
-	    state.current_voice.get_wavetable(
+	    state.current_voice.get_wavetable_with_params(
 		*f,
 		DEFAULT_SAMPLE_RATE,
-		state.voice_params.amplitude,
-		state.voice_params.phase,
+		&state.voice_params,
 	    )
 	})
 	.collect()

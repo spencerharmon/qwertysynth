@@ -3,19 +3,7 @@ use std::sync::{Arc, Mutex};
 
 use crate::envelope::EnvelopeParams;
 use crate::voice::VoiceList;
-use crate::wave_table::{DEFAULT_AMPLITUDE, DEFAULT_PHASE};
-
-#[derive(Clone, Copy, Debug)]
-pub struct VoiceParams {
-    pub amplitude: f32,
-    pub phase: u8,
-}
-
-impl Default for VoiceParams {
-    fn default() -> Self {
-	Self { amplitude: DEFAULT_AMPLITUDE, phase: DEFAULT_PHASE }
-    }
-}
+pub use crate::voice::params::VoiceParams;
 
 #[derive(Clone, Copy, Debug)]
 pub struct EtParams {

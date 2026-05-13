@@ -22,13 +22,14 @@ fn generate_wave_table(
     amplitude: f32,
     phase: u8,
     partial_amplitudes: &[f32; NUM_PARTIALS],
+    partial_phases: &[f32; NUM_PARTIALS],
 ) -> WaveTable {
     // Each partial completes exactly `n` cycles inside one canonical
     // period, so partial content is independent of `frequency`. The
     // Nyquist check still uses `frequency` because playback rate is
     // what determines which partials would alias.
     let len = PERIOD_SAMPLES;
-    let phi = phase as f32 / 256.0 * 2.0 * std::f32::consts::PI;
+    let global_phi = phase as f32 / 256.0 * 2.0 * std::f32::consts::PI;
     let nyquist = sample_rate as f32 / 2.0;
 
     let mut samples = vec![0f32; len];
@@ -41,6 +42,7 @@ fn generate_wave_table(
         if *a == 0.0 {
             continue;
         }
+        let phi = global_phi + partial_phases[n_minus_one];
         for i in 0..len {
             samples[i] += a
                 * (2.0 * std::f32::consts::PI * n * i as f32 / len as f32 + phi).sin();
@@ -71,6 +73,26 @@ impl AdditiveSynth {
             amplitude,
             phase,
             &DEFAULT_AMPLITUDES,
+            &[0.0; NUM_PARTIALS],
+        );
+        AdditiveSynth { wavetable: wt }
+    }
+
+    pub fn with_partials(
+        frequency: f32,
+        sample_rate: u16,
+        amplitude: f32,
+        phase: u8,
+        partial_amplitudes: &[f32; NUM_PARTIALS],
+        partial_phases: &[f32; NUM_PARTIALS],
+    ) -> AdditiveSynth {
+        let wt = generate_wave_table(
+            frequency,
+            sample_rate,
+            amplitude,
+            phase,
+            partial_amplitudes,
+            partial_phases,
         );
         AdditiveSynth { wavetable: wt }
     }

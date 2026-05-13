@@ -1,8 +1,10 @@
 pub mod sine;
 pub mod additive_synth;
+pub mod params;
 
 use crate::voice::sine::Sine;
 use crate::voice::additive_synth::AdditiveSynth;
+use crate::voice::params::VoiceParams;
 use crate::wave_table::WaveTable;
 
 use std::str::FromStr;
@@ -45,6 +47,29 @@ impl VoiceList {
 		AdditiveSynth::new(frequency, sample_rate, amplitude, phase)
 		.get_wavetable(),
         }
+    }
+
+    pub fn get_wavetable_with_params(
+	&self,
+	frequency: f32,
+	sample_rate: u16,
+	params: &VoiceParams,
+    ) -> WaveTable {
+	match self {
+	    Self::Sine =>
+		Sine::new(frequency, sample_rate, params.amplitude, params.phase)
+		.get_wavetable(),
+	    Self::AdditiveSynth =>
+		AdditiveSynth::with_partials(
+		    frequency,
+		    sample_rate,
+		    params.amplitude,
+		    params.phase,
+		    &params.partial_amplitudes,
+		    &params.partial_phases,
+		)
+		.get_wavetable(),
+	}
     }
 }
     
