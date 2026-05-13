@@ -1,0 +1,166 @@
+#+TITLE: qwertysynth
+#+OPTIONS: toc:2
+
+* What is qwertysynth?
+
+qwertysynth is a polyphonic software synthesizer that turns your computer
+keyboard into a 40-note instrument. Unlike a piano-style MIDI controller,
+it is built for *non-twelve-tone tunings*: by default it splits the octave
+into 33 equal steps and lays them out diagonally across the four main
+rows of a US QWERTY keyboard.
+
+It speaks JACK for audio output and ships with two voices (=sine= and
+=additive_synth=) and one tuning system (equal temperment, with
+configurable base frequency, subdivisions, and interval multiplier so you
+can do tritave splits and other n-tave layouts in addition to octaves).
+
+A small egui-based GUI shows the keyboard live, lets you switch voice
+and tuning at runtime, and reports the frequency of the last key you
+played.
+
+* Requirements
+
+- Linux with a running JACK server (=jackd=, =pipewire-jack=, etc.)
+- Rust toolchain (stable, edition 2021)
+- Read access to =/dev/input/event*= for keyboard input. On most
+  distros this means being in the =input= group:
+
+  #+begin_src sh
+  sudo usermod -aG input $USER
+  #+end_src
+
+  then log out and back in. (Some distros use a udev rule instead;
+  if =ls -l /dev/input/event*= shows your user can already read them,
+  you're set.)
+
+* Building
+
+#+begin_src sh
+git clone <this repo>
+cd qwertysynth
+cargo build --release
+#+end_src
+
+The first build pulls a fair amount: =jack=, =eframe=, and their
+transitive dependencies.
+
+* Running
+
+Make sure JACK is running, then:
+
+#+begin_src sh
+cargo run --release
+#+end_src
+
+A window titled =qwertysynth= will open. Connect its =left= and =right=
+output ports to your audio interface (or system playback) using your
+preferred JACK patchbay (=qjackctl=, =carla=, =helvum=, etc.).
+
+** Command-line options
+
+| Flag                   | Default | Meaning                                |
+|------------------------+---------+----------------------------------------|
+| =-b=, =--base_freq=    | 440.0   | Lowest frequency of the scale, in Hz   |
+| =-s=, =--subdivisions= | 33      | Equal divisions per "n-tave"           |
+| =--voice=              | sine    | Initial voice: =sine= or =additive-synth= |
+| =--attack=             | 0.005   | ADSR attack time, seconds              |
+| =--decay=              | 0.05    | ADSR decay time, seconds               |
+| =--sustain=            | 0.8     | ADSR sustain level (0.0 - 1.0)         |
+| =--release=            | 0.05    | ADSR release time, seconds             |
+
+These are starting values only; everything can be changed live in the
+GUI.
+
+* Playing
+
+The 40 scale steps are laid out *diagonally* across the keyboard, with
+each column of four physical keys covering four consecutive scale
+degrees. Reading from the lowest note to the highest:
+
+#+begin_example
+z a q 1   x s w 2   c d e 3   v f r 4   b g t 5
+n h y 6   m j u 7   , k i 8   . l o 9   / ; p 0
+#+end_example
+
+So =z= is the lowest note, =a= is one step up, =q= is two steps up, =1=
+is three steps up, =x= is four steps up, and so on, ending at =0= (forty
+steps above =z=).
+
+With the default 33-EDO over an octave starting at 440 Hz, that gives
+you just over an octave on the bottom physical row alone, and a little
+more than a "tritave-and-a-bit" across the full layout.
+
+The synth is fully polyphonic: hold as many keys as you have fingers
+for.
+
+* The GUI
+
+- *Top bar* — JACK status dot (green = audio task running), voice
+  selector with a *configure voice…* button, tuning selector with a
+  *configure tuning…* button, and four ADSR sliders (attack, decay,
+  sustain, release). Slider changes apply to notes pressed *after* the
+  change; notes already sounding keep their original envelope.
+- *Center* — live picture of the four QWERTY rows; cells light up as
+  you press and release keys.
+- *Bottom bar* — current tuning and its parameters, current voice, and
+  the last key you played with its frequency in Hz.
+
+** Voice config
+
+Opens a per-voice window with shared global controls:
+
+- *amplitude* — output gain (0.0 - 1.0)
+- *phase* — global starting phase (0 - 255, mapped to one full turn)
+
+For =additive_synth= the window also shows a *partials* grid with one
+row per harmonic (8 partials):
+
+- *amplitude* — that partial's weight before peak-normalization
+  (0.0 - 1.0). Defaults to =1/n= (sawtooth-ish).
+- *phase* — that partial's starting phase, in radians (0 - 2π). Added
+  on top of the global phase, so the global control still rotates the
+  whole waveform while the per-partial phases reshape its timbre.
+
+A *reset* button restores both columns to the defaults.
+
+** Tuning config
+
+Opens an equal-temperment window with:
+
+- *base freq* — the frequency assigned to the leftmost key (=z=)
+- *subdivisions* — number of equal steps within one "n-tave"
+- *multiplier* — the n-tave: 2 = octave, 3 = tritave, 4 = double-octave,
+  etc.
+
+Click *apply* to regenerate the scale and rebuild the wavetables. Held
+notes are released by the swap; press the keys again to hear the new
+tuning.
+
+* Voices
+
+** sine
+A pure sine wave at the requested frequency. Honors the global
+amplitude and phase controls. Good for hearing a tuning system without
+any spectral coloring confusing your ears.
+
+** additive_synth
+Eight harmonic partials (frequency ratios 1 through 8) with
+default amplitudes of =1/n= (a sawtooth-like spectrum), peak-normalized
+and then scaled by the global amplitude. Partials above the Nyquist
+frequency are skipped. Same global phase control as =sine=.
+
+* Known limitations
+
+- *Linux-only.* Keyboard input uses evdev (=/dev/input/event*=),
+  which is a Linux kernel interface. macOS and Windows support would
+  require their own platform input backends.
+- *Only one tuning system in the GUI* (equal temperment). The
+  architecture is ready for a =TuningSystem= trait once a second
+  system is added (just intonation, Scala =.scl= import, etc.).
+- *Tuning / voice swap drops held notes.* Changing voice or applying
+  new tuning parameters releases anything currently sounding; press
+  the keys again to hear the change.
+
+* License
+
+See repository.
