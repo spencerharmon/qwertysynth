@@ -11,6 +11,7 @@ mod gui;
 mod app_state;
 mod envelope;
 mod midi;
+mod tuning;
 
 
 use crate::voice::Voice;

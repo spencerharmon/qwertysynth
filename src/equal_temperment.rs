@@ -1,4 +1,5 @@
 use crate::scale;
+use crate::tuning::TuningSystem;
 
 pub const DEFAULT_BASE_FREQUENCY: f32 = 440.0;
 pub const DEFAULT_SUBDIVISIONS: u8 = 33;
@@ -39,5 +40,27 @@ impl EqualTemperment {
 	    top_freq = bottom_freq * self.multiplier as f32;
 	}
 	scale::Scale::new(scale_frequencies)
+    }
+}
+
+impl TuningSystem for EqualTemperment {
+    fn generate_scale(&self, num_notes: usize) -> Vec<f32> {
+	let mut bottom_freq: f32 = self.base_frequency;
+	let mut top_freq: f32 = bottom_freq * self.multiplier as f32;
+	let mut frequencies: Vec<f32> = Vec::with_capacity(num_notes + 1);
+	while frequencies.len() <= num_notes {
+	    let interval = (top_freq - bottom_freq) / self.subdivisions as f32;
+	    frequencies.push(bottom_freq);
+	    let mut next_freq: f32 = bottom_freq;
+	    for _ in 0..self.subdivisions {
+		next_freq += interval;
+		frequencies.push(next_freq);
+	    }
+	    frequencies.pop();
+	    bottom_freq = top_freq;
+	    top_freq = bottom_freq * self.multiplier as f32;
+	}
+	frequencies.truncate(num_notes);
+	frequencies
     }
 }

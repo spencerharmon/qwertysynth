@@ -11,6 +11,42 @@ pub fn show(ui: &mut egui::Ui, state: &AppState) {
 	    p.subdivisions,
 	    p.multiplier,
 	),
+	TuningSystemList::Harmonic(p) => format!(
+	    "{} (fundamental {:.2} Hz, start {})",
+	    state.current_tuning.name(),
+	    p.fundamental,
+	    p.start_harmonic,
+	),
+	TuningSystemList::Mos(p) => format!(
+	    "{} (base {:.2} Hz, gen {:.4}, frame {:.3}, size {})",
+	    state.current_tuning.name(),
+	    p.base_freq,
+	    p.generator,
+	    p.framing_interval,
+	    p.mos_size,
+	),
+	TuningSystemList::Lattice(p) => format!(
+	    "{} (base {:.2} Hz, 3-limit ±{}, 5-limit ±{})",
+	    state.current_tuning.name(),
+	    p.base_freq,
+	    p.three_limit,
+	    p.five_limit,
+	),
+	TuningSystemList::SternBrocot(p) => format!(
+	    "{} (base {:.2} Hz, frame {:.3})",
+	    state.current_tuning.name(),
+	    p.base_freq,
+	    p.framing_interval,
+	),
+	TuningSystemList::Scala(p) => {
+	    let desc = p.loaded.as_ref().map(|f| f.description.as_str()).unwrap_or("(no file)");
+	    format!(
+		"{} (base {:.2} Hz, {})",
+		state.current_tuning.name(),
+		p.base_freq,
+		desc,
+	    )
+	}
     };
     let voice_str = format!("voice: {}", voice_name(&state.current_voice));
     let key_str = match state.last_key {

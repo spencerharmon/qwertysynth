@@ -12,15 +12,75 @@ pub struct EtParams {
     pub multiplier: u8,
 }
 
+#[derive(Clone, Copy, Debug)]
+pub struct HarmonicParams {
+    pub fundamental: f32,
+    pub start_harmonic: u32,
+}
+
+#[derive(Clone, Copy, Debug)]
+pub struct MosParams {
+    pub base_freq: f32,
+    pub generator: f32,
+    pub framing_interval: f32,
+    pub mos_size: u8,
+}
+
+#[derive(Clone, Copy, Debug)]
+pub struct LatticeParams {
+    pub base_freq: f32,
+    pub three_limit: u8,
+    pub five_limit: u8,
+}
+
+#[derive(Clone, Copy, Debug)]
+pub struct SternBrocotParams {
+    pub base_freq: f32,
+    pub framing_interval: f32,
+}
+
+#[derive(Clone, Debug)]
+pub struct ScalaParams {
+    pub base_freq: f32,
+    pub path: String,
+    /// None until the user successfully loads a file. The path field
+    /// alone isn't enough — we need the parsed contents to generate
+    /// the scale.
+    pub loaded: Option<crate::tuning::scala::ScalaFile>,
+    /// Last load error, surfaced in the GUI.
+    pub last_error: Option<String>,
+}
+
+impl Default for ScalaParams {
+    fn default() -> Self {
+	Self {
+	    base_freq: 220.0,
+	    path: String::new(),
+	    loaded: None,
+	    last_error: None,
+	}
+    }
+}
+
 #[derive(Clone, Debug)]
 pub enum TuningSystemList {
     EqualTemperment(EtParams),
+    Harmonic(HarmonicParams),
+    Mos(MosParams),
+    Lattice(LatticeParams),
+    SternBrocot(SternBrocotParams),
+    Scala(ScalaParams),
 }
 
 impl TuningSystemList {
     pub fn name(&self) -> &'static str {
 	match self {
 	    TuningSystemList::EqualTemperment(_) => "equal temperment",
+	    TuningSystemList::Harmonic(_) => "harmonic series",
+	    TuningSystemList::Mos(_) => "MOS / generator",
+	    TuningSystemList::Lattice(_) => "5-limit lattice",
+	    TuningSystemList::SternBrocot(_) => "Stern-Brocot",
+	    TuningSystemList::Scala(_) => "Scala (.scl)",
 	}
     }
 }

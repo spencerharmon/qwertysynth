@@ -10,9 +10,11 @@ into 33 equal steps and lays them out diagonally across the four main
 rows of a US QWERTY keyboard.
 
 It speaks JACK for audio output and ships with two voices (=sine= and
-=additive_synth=) and one tuning system (equal temperment, with
-configurable base frequency, subdivisions, and interval multiplier so you
-can do tritave splits and other n-tave layouts in addition to octaves).
+=additive_synth=) and six tuning systems (equal temperment, harmonic
+series, MOS / generator stacks, 5-limit lattice, Stern-Brocot, and
+Scala =.scl= file import). It also accepts a sustain pedal over JACK
+MIDI (CC 64), with both Shift keys as a built-in fallback for users
+without a MIDI controller.
 
 A small egui-based GUI shows the keyboard live, lets you switch voice
 and tuning at runtime, and reports the frequency of the last key you
@@ -54,7 +56,9 @@ cargo run --release
 
 A window titled =qwertysynth= will open. Connect its =left= and =right=
 output ports to your audio interface (or system playback) using your
-preferred JACK patchbay (=qjackctl=, =carla=, =helvum=, etc.).
+preferred JACK patchbay (=qjackctl=, =carla=, =helvum=, etc.). The
+synth also exposes one MIDI input port called =sustain= for a hardware
+sustain pedal; connect any MIDI controller's CC 64 output to it.
 
 ** Command-line options
 
@@ -95,15 +99,38 @@ for.
 
 * The GUI
 
-- *Top bar* — JACK status dot (green = audio task running), voice
-  selector with a *configure voice…* button, tuning selector with a
-  *configure tuning…* button, and four ADSR sliders (attack, decay,
-  sustain, release). Slider changes apply to notes pressed *after* the
-  change; notes already sounding keep their original envelope.
-- *Center* — live picture of the four QWERTY rows; cells light up as
-  you press and release keys.
-- *Bottom bar* — current tuning and its parameters, current voice, and
-  the last key you played with its frequency in Hz.
+- *Top bar* — JACK status dot (green = audio task running), sustain
+  status dot (amber = pedal currently held by Shift, MIDI, or both),
+  voice selector with a *configure voice…* button, tuning selector
+  with a *configure tuning…* button, and four ADSR sliders (attack,
+  decay, sustain, release). Slider changes apply to notes pressed
+  *after* the change; notes already sounding keep their original
+  envelope.
+- *Center* — live picture of the four QWERTY rows, with both Shift
+  keys flanking the bottom row at their real US ANSI 2.25u positions.
+  Cells light up as you press and release keys; each Shift cell
+  lights independently from its own physical key. Above the keyboard,
+  a *MIDI sustain (CC 64)* indicator lights when the pedal is held
+  via MIDI.
+- *Bottom bar* — current tuning and its parameters, current voice,
+  and the last key you played with its frequency in Hz.
+
+** Sustain pedal
+
+Either Shift key on the computer keyboard or MIDI CC 64 (sent to the
+=sustain= JACK MIDI port) acts as a piano-style sustain pedal. While
+the pedal is held, releasing a key does *not* fade the note out;
+instead the note is held until the pedal lifts, at which point all
+deferred releases fire at once. Notes pressed during the pedal are
+also held until the lift.
+
+Re-pressing a key during the pedal releases that key's deferred voice
+and starts a fresh one. This prevents repeated strikes from stacking
+into ever-louder sums of in-phase copies.
+
+The effective pedal state is the OR of the two Shift keys and MIDI
+CC 64; any one of them being down counts as held. Half-pedal
+(intermediate CC values) is not implemented.
 
 ** Voice config
 
@@ -125,16 +152,13 @@ A *reset* button restores both columns to the defaults.
 
 ** Tuning config
 
-Opens an equal-temperment window with:
+Opens a config window for the currently-selected tuning system. Each
+system has its own set of parameters; see *Tuning systems* below for
+what each one does.
 
-- *base freq* — the frequency assigned to the leftmost key (=z=)
-- *subdivisions* — number of equal steps within one "n-tave"
-- *multiplier* — the n-tave: 2 = octave, 3 = tritave, 4 = double-octave,
-  etc.
-
-Click *apply* to regenerate the scale and rebuild the wavetables. Held
-notes are released by the swap; press the keys again to hear the new
-tuning.
+Click *apply* (or just change a value, in some cases) to regenerate
+the scale and rebuild the wavetables. Held notes are released by the
+swap; press the keys again to hear the new tuning.
 
 * Voices
 
@@ -148,18 +172,132 @@ Eight harmonic partials (frequency ratios 1 through 8) with
 default amplitudes of =1/n= (a sawtooth-like spectrum), peak-normalized
 and then scaled by the global amplitude. Partials above the Nyquist
 frequency are skipped. Same global phase control as =sine=.
+Per-partial amplitude and phase sliders in the config window let you
+sculpt the spectrum freely.
+
+* Tuning systems
+
+The synth always plays a 40-note scale laid out across the QWERTY
+grid (=z= = lowest note, =0= = highest). Each tuning system below
+generates that 40-note scale from a small set of parameters. All
+systems are sorted ascending by pitch, so adjacent keys on the
+keyboard always play adjacent pitches in the scale.
+
+** equal temperment
+
+Splits an "n-tave" (the framing interval, 2 = octave, 3 = tritave,
+etc.) into N equal logarithmic steps. Parameters:
+
+- *base freq* — the frequency assigned to the leftmost key (=z=).
+- *subdivisions* — number of equal steps within one n-tave.
+- *multiplier* — the n-tave: 2 = octave, 3 = tritave, 4 = double
+  octave, etc.
+
+Defaults: 440 Hz, 33 subdivisions, multiplier 2 — 33-EDO.
+
+** harmonic series
+
+Frequencies are literally the upper partials of a fundamental. Notes
+are *not* equally spaced; intervals shrink as you ascend. Strikingly
+unlike a piano, but the most direct way to *hear* what just-intonation
+intervals sound like in their pure form. Two parameters:
+
+- *fundamental (Hz)* — the missing fundamental whose harmonics make
+  up the scale. The lowest note (=z=) is =fundamental × start_harmonic=.
+- *start harmonic* — which harmonic the lowest key plays. Lower
+  values give wider intervals (and very wide gaps between low notes);
+  higher values give narrower, more melodic-sounding scales.
+
+Defaults: fundamental 110 Hz (A2), start harmonic 8 — gives 40 notes
+from harmonic 8 to harmonic 47.
+
+** MOS / generator
+
+Erv Wilson's Moment of Symmetry approach: pick a generator interval,
+stack it inside a framing interval, sort. One period of the scale is
+the sorted set of stacked generators; the period repeats upward to
+fill 40 keys. Four parameters:
+
+- *base freq (Hz)* — the lowest note (=z=).
+- *generator* — the interval to stack. 1.5 = 3/2 (perfect fifth) gives
+  Pythagorean. 1.25 = 5/4 (just major third) gives a different MOS.
+  Irrational generators give xenharmonic territory.
+- *framing interval* — the interval the scale repeats over (2 =
+  octave, 3 = tritave, etc.).
+- *MOS size* — how many generator stacks make up one period (7 =
+  diatonic, 12 = chromatic, 19 = 19-tone meantone, etc.).
+
+Defaults: 220 Hz, generator 1.5, framing 2.0, size 7 — Pythagorean
+diatonic-ish (the result is Pythagorean stacks-up-only, not the
+classical Pythagorean major scale which uses both up and down
+stacks).
+
+** 5-limit lattice
+
+Generates ratios of the form =3^a × 5^b × 2^c=, with =(a, b)= drawn
+from a bounded window and =c= chosen to reduce each ratio into one
+octave. Produces classically "JI sounding" scales: 9/8, 6/5, 5/4,
+4/3, 3/2, 5/3, etc. all show up naturally. Three parameters:
+
+- *base freq (Hz)* — the lowest note (=z=).
+- *3-limit window (±)* — how many powers of 3 to include in each
+  direction.
+- *5-limit window (±)* — how many powers of 5 to include in each
+  direction.
+
+The total ratios per octave is roughly =(2·three+1) × (2·five+1)=
+deduplicated. Defaults =(2, 1)= give 15 ratios per octave; 40 keys
+then span roughly 3 octaves.
+
+** Stern-Brocot
+
+Enumerates the simplest positive rational numbers in the framing
+interval, using the Stern-Brocot tree. Adds mediants pass by pass:
+3/2 first (simplest), then 4/3 and 5/3, then 5/4 / 7/5 / 8/5 / 7/4,
+and so on. The 40 simplest such ratios become the scale, sorted
+ascending by pitch. Two parameters:
+
+- *base freq (Hz)* — the lowest note (=z=).
+- *framing interval* — the upper bound of the ratios (2 = octave).
+
+Defaults: 220 Hz, framing 2.0. Pitch-sorted output makes it playable
+as a normal scale; the underlying complexity ordering only determines
+*which* ratios make it into the 40-note set.
+
+** Scala (.scl) import
+
+Loads a Scala scale file — the standard exchange format for
+microtonal scales, with thousands of pre-built scales available
+online (every historical temperament, every world-music tuning,
+every theoretical proposal). Two parameters:
+
+- *base freq (Hz)* — the lowest note (=z=).
+- *file* — text path to a =.scl= file. Click *load* to parse it. If
+  the file parses cleanly, the description and ratio count are shown;
+  if not, the parse error is shown in red and the previous scale
+  stays active.
+
+The scale repeats the file's period (the last entry in the file,
+typically 2/1 but occasionally 3/1 or other) upward to fill 40 keys.
+Both ratio entries (=3/2=) and cents entries (=701.955=) are
+supported, as are inline comments after each ratio.
+
+The file picker is currently a text field for the path; a native file
+dialog is planned but not yet wired up.
 
 * Known limitations
 
 - *Linux-only.* Keyboard input uses evdev (=/dev/input/event*=),
   which is a Linux kernel interface. macOS and Windows support would
   require their own platform input backends.
-- *Only one tuning system in the GUI* (equal temperment). The
-  architecture is ready for a =TuningSystem= trait once a second
-  system is added (just intonation, Scala =.scl= import, etc.).
 - *Tuning / voice swap drops held notes.* Changing voice or applying
   new tuning parameters releases anything currently sounding; press
   the keys again to hear the change.
+- *No half-pedal.* The sustain pedal is binary (down or up); MIDI CC
+  64 values >= 64 are "down", < 64 are "up", with no support for
+  intermediate dampening.
+- *Scala file picker is a text field.* A native file dialog is
+  planned.
 
 * License
 
