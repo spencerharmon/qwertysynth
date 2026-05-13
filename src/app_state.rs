@@ -28,6 +28,10 @@ impl TuningSystemList {
 pub struct AppState {
     pub pressed: HashSet<u16>,
     pub jack_active: bool,
+    pub sustain_active: bool,
+    pub left_shift_active: bool,
+    pub right_shift_active: bool,
+    pub midi_sustain_active: bool,
     pub current_voice: VoiceList,
     pub voice_params: VoiceParams,
     pub current_tuning: TuningSystemList,
@@ -48,6 +52,10 @@ impl AppState {
 	Self {
 	    pressed: HashSet::new(),
 	    jack_active: false,
+	    sustain_active: false,
+	    left_shift_active: false,
+	    right_shift_active: false,
+	    midi_sustain_active: false,
 	    current_voice: voice,
 	    voice_params: VoiceParams::default(),
 	    current_tuning: tuning,

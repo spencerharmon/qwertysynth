@@ -3,6 +3,14 @@ use evdev::{Device, EventSummary, KeyCode};
 use std::collections::HashMap;
 use tokio::task;
 
+/// Sentinel scale-index values sent on the existing key on/off channels
+/// for keys that don't map to a scale degree. Consumers (instrument,
+/// GUI) recognize these and treat them as control events instead of
+/// note events. u16::MAX and u16::MAX-1 are well outside the valid
+/// 0..40 scale-index range.
+pub const KEY_EVENT_LEFT_SHIFT: u16 = u16::MAX;
+pub const KEY_EVENT_RIGHT_SHIFT: u16 = u16::MAX - 1;
+
 /// Spawn one async listener per attached keyboard device. Each listener
 /// reads evdev key events and forwards mapped scale indices into the
 /// shared on/off channels.
@@ -60,7 +68,12 @@ async fn run_device(
 		if let EventSummary::Key(_, code, value) = ev.destructure() {
 		    // value: 0 = release, 1 = press, 2 = autorepeat (ignore)
 		    let kernel_code = code.code() as u16;
-		    if let Some(idx) = key_map_convert(kernel_code) {
+		    let mapped = match kernel_code {
+			42 => Some(KEY_EVENT_LEFT_SHIFT),
+			54 => Some(KEY_EVENT_RIGHT_SHIFT),
+			other => key_map_convert(other),
+		    };
+		    if let Some(idx) = mapped {
 			match value {
 			    1 => { let _ = on_chan.send(idx); }
 			    0 => { let _ = off_chan.send(idx); }

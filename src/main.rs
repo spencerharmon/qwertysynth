@@ -10,6 +10,7 @@ mod voice;
 mod gui;
 mod app_state;
 mod envelope;
+mod midi;
 
 
 use crate::voice::Voice;
@@ -71,6 +72,7 @@ fn main() {
 
     let (swap_tx, swap_rx) = unbounded::<Vec<wave_table::WaveTable>>();
     let (env_tx, env_rx) = unbounded::<envelope::EnvelopeParams>();
+    let (midi_sustain_gui_tx, midi_sustain_gui_rx) = unbounded::<bool>();
 
     let state = std::sync::Arc::new(std::sync::Mutex::new(app_state::AppState::new(
 	args.voice.clone(),
@@ -90,7 +92,7 @@ fn main() {
 
     let rt = tokio::runtime::Runtime::new().expect("failed to build tokio runtime");
     rt.spawn(async move {
-	output::Output::jack_output(args.base_freq, args.subdivisions, instrument, swap_rx, env_rx).await;
+	output::Output::jack_output(args.base_freq, args.subdivisions, instrument, swap_rx, env_rx, midi_sustain_gui_tx).await;
     });
     // TODO: real JACK liveness signal would require an output.rs edit.
     state.lock().unwrap().jack_active = true;
@@ -101,5 +103,5 @@ fn main() {
 	keyboard::create_keyboard_listener(gui_on_tx, gui_off_tx).await.ok();
     });
 
-    gui::run(swap_tx, env_tx, state, gui_on_rx, gui_off_rx).expect("gui exited with error");
+    gui::run(swap_tx, env_tx, state, gui_on_rx, gui_off_rx, midi_sustain_gui_rx).expect("gui exited with error");
 }
