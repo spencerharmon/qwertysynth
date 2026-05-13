@@ -20,6 +20,18 @@ pub fn show_top_bar(ui: &mut egui::Ui, state: &mut AppState) -> bool {
 		if ui.button("additive synth").clicked() {
 		    state.current_voice = VoiceList::AdditiveSynth;
 		}
+		if ui.button("sawtooth").clicked() {
+		    state.current_voice = VoiceList::Sawtooth;
+		}
+		if ui.button("square").clicked() {
+		    state.current_voice = VoiceList::Square;
+		}
+		if ui.button("triangle").clicked() {
+		    state.current_voice = VoiceList::Triangle;
+		}
+		if ui.button("pwm").clicked() {
+		    state.current_voice = VoiceList::Pwm;
+		}
 	    });
 	if std::mem::discriminant(&state.current_voice) != prev {
 	    changed = true;
@@ -52,6 +64,13 @@ pub fn show_config_window(ctx: &egui::Context, state: &mut AppState) -> bool {
 	    if matches!(voice, VoiceList::AdditiveSynth) {
 		ui.separator();
 		changed |= show_partials(ui, p);
+	    }
+	    if matches!(voice, VoiceList::Pwm) {
+		ui.separator();
+		let r = ui.add(egui::Slider::new(&mut p.pwm_duty, 0.05..=0.95).text("duty"));
+		if r.changed() {
+		    changed = true;
+		}
 	    }
 	});
     state.show_voice_config = open;
@@ -115,6 +134,10 @@ fn voice_name(v: &VoiceList) -> &'static str {
     match v {
 	VoiceList::Sine => "sine",
 	VoiceList::AdditiveSynth => "additive synth",
+	VoiceList::Sawtooth => "sawtooth",
+	VoiceList::Square => "square",
+	VoiceList::Triangle => "triangle",
+	VoiceList::Pwm => "pwm",
     }
 }
 
@@ -122,5 +145,9 @@ fn voice_window_id(v: &VoiceList) -> &'static str {
     match v {
 	VoiceList::Sine => "sine_config_window",
 	VoiceList::AdditiveSynth => "additive_synth_config_window",
+	VoiceList::Sawtooth => "sawtooth_config_window",
+	VoiceList::Square => "square_config_window",
+	VoiceList::Triangle => "triangle_config_window",
+	VoiceList::Pwm => "pwm_config_window",
     }
 }

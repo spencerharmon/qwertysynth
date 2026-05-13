@@ -66,5 +66,9 @@ fn voice_name(v: &crate::voice::VoiceList) -> &'static str {
     match v {
 	crate::voice::VoiceList::Sine => "sine",
 	crate::voice::VoiceList::AdditiveSynth => "additive synth",
+	crate::voice::VoiceList::Sawtooth => "sawtooth",
+	crate::voice::VoiceList::Square => "square",
+	crate::voice::VoiceList::Triangle => "triangle",
+	crate::voice::VoiceList::Pwm => "pwm",
     }
 }
